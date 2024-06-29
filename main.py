@@ -1,55 +1,109 @@
 import os
 import time
-import pyautogui
+import tkinter as tk
+from PIL import Image, ImageGrab, ImageTk
 import win32clipboard
 from io import BytesIO
-from PIL import Image
+import keyboard
+import sys
 
-def capture_screenshot():
-    # Capture the screenshot
-    screenshot = pyautogui.screenshot()
-    return screenshot
+# Global variables
+screenshot_dir = "screenshots"
+root = None
+canvas = None
+rect = None
+start_x = start_y = 0
+curX = curY = 0
+running = True
 
-def save_screenshot(screenshot, directory):
-    # Create the directory if it doesn't exist
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+# Ensure the screenshot directory exists
+if not os.path.exists(screenshot_dir):
+    os.makedirs(screenshot_dir)
 
-    # Generate a unique filename based on the current timestamp
+def start_capture(e):
+    global root, canvas, rect, start_x, start_y
+    start_x = e.x
+    start_y = e.y
+    rect = canvas.create_rectangle(e.x, e.y, e.x, e.y, outline='red', width=2)
+
+def drag(e):
+    global canvas, rect, curX, curY
+    curX, curY = e.x, e.y
+    canvas.coords(rect, start_x, start_y, curX, curY)
+
+def capture_screenshot(e):
+    global root, start_x, start_y, curX, curY
+    x1 = min(start_x, curX)
+    y1 = min(start_y, curY)
+    x2 = max(start_x, curX)
+    y2 = max(start_y, curY)
+    
+    root.withdraw()  # Hide the window temporarily
+    time.sleep(0.1)  # Small delay to ensure the window is hidden
+    
+    screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))
+    
+    # Save to file
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    filename = f"screenshot_{timestamp}.png"
-    filepath = os.path.join(directory, filename)
+    filename = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
+    screenshot.save(filename)
+    print(f"Screenshot saved: {filename}")
 
-    # Save the screenshot to the specified directory
-    screenshot.save(filepath)
-    print(f"Screenshot saved: {filepath}")
-
-def copy_to_clipboard(screenshot):
-    # Convert the screenshot to a format suitable for the clipboard
+    # Copy to clipboard
     output = BytesIO()
     screenshot.convert("RGB").save(output, "BMP")
-    data = output.getvalue()[14:]  # Remove the BMP header
+    data = output.getvalue()[14:]
     output.close()
 
-    # Copy the screenshot to the clipboard
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
     win32clipboard.CloseClipboard()
+
     print("Screenshot copied to clipboard")
+    root.quit()
 
-def main():
-    # Specify the directory to save screenshots
-    save_directory = r"C:\Screenshots"
+def on_key(e):
+    if e.name == 'esc':
+        root.quit()
 
-    # Capture the screenshot
-    screenshot = capture_screenshot()
+def start_screenshot_mode():
+    global root, canvas
+    
+    root = tk.Tk()
+    root.attributes('-fullscreen', True)
+    root.attributes('-alpha', 0.3)
+    root.configure(cursor="cross")
 
-    # Save the screenshot to the directory
-    save_screenshot(screenshot, save_directory)
+    canvas = tk.Canvas(root, cursor="cross")
+    canvas.pack(fill=tk.BOTH, expand=True)
 
-    # Copy the screenshot to the clipboard
-    copy_to_clipboard(screenshot)
+    root.bind('<ButtonPress-1>', start_capture)
+    root.bind('<B1-Motion>', drag)
+    root.bind('<ButtonRelease-1>', capture_screenshot)
+    
+    keyboard.on_press(on_key)
 
-if __name__ == "__main__":
-    main()
+    root.mainloop()
+
+def exit_program(e):
+    global running
+    if e.name == 'esc':
+        print("\nExiting program...")
+        running = False
+        sys.exit(0)
+
+print("Press PrintScreen to start capturing, or Esc to exit...")
+
+# Set up the global Esc key watch
+keyboard.on_press(exit_program)
+
+try:
+    while running:
+        keyboard.wait('print_screen')
+        start_screenshot_mode()
+        print("Press PrintScreen to capture again or Esc to exit.")
+except KeyboardInterrupt:
+    print("\nProgram terminated by user.")
+finally:
+    keyboard.unhook_all()
