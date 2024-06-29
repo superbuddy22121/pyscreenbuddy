@@ -63,10 +63,6 @@ def capture_screenshot(e):
     print("Screenshot copied to clipboard")
     root.quit()
 
-def on_key(e):
-    if e.name == 'esc':
-        root.quit()
-
 def start_screenshot_mode():
     global root, canvas
     
@@ -81,28 +77,16 @@ def start_screenshot_mode():
     root.bind('<ButtonPress-1>', start_capture)
     root.bind('<B1-Motion>', drag)
     root.bind('<ButtonRelease-1>', capture_screenshot)
-    
-    keyboard.on_press(on_key)
 
     root.mainloop()
 
-def exit_program(e):
-    global running
-    if e.name == 'esc':
-        print("\nExiting program...")
-        running = False
-        sys.exit(0)
-
-print("Press PrintScreen to start capturing, or Esc to exit...")
-
-# Set up the global Esc key watch
-keyboard.on_press(exit_program)
+print("Press PrintScreen to start capturing...")
 
 try:
-    while running:
+    while True:
         keyboard.wait('print_screen')
         start_screenshot_mode()
-        print("Press PrintScreen to capture again or Esc to exit.")
+        print("Press PrintScreen to capture again.")
 except KeyboardInterrupt:
     print("\nProgram terminated by user.")
 finally:
