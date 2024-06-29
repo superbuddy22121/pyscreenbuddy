@@ -1,10 +1,12 @@
 import tkinter as tk
 import keyboard
-from PIL import ImageGrab, ImageTk, Image
+from PIL import Image
 import win32clipboard
 import io
 import os
 from datetime import datetime
+from screeninfo import get_monitors
+import mss
 
 def send_to_clipboard(clip_type, data):
     win32clipboard.OpenClipboard()
@@ -12,13 +14,24 @@ def send_to_clipboard(clip_type, data):
     win32clipboard.SetClipboardData(clip_type, data)
     win32clipboard.CloseClipboard()
 
+def get_total_screen_dimensions():
+    monitors = get_monitors()
+    min_x = min(m.x for m in monitors)
+    min_y = min(m.y for m in monitors)
+    max_x = max(m.x + m.width for m in monitors)
+    max_y = max(m.y + m.height for m in monitors)
+    return (min_x, min_y, max_x, max_y)
+
 def start_screenshot_mode():
     global root
     root = tk.Tk()
     root.attributes('-alpha', 0.3)
-    root.attributes('-fullscreen', True)
     root.attributes('-topmost', True)
     root.configure(cursor="cross")
+
+    # Get total screen dimensions
+    screen_dims = get_total_screen_dimensions()
+    root.geometry(f"{screen_dims[2]-screen_dims[0]}x{screen_dims[3]-screen_dims[1]}+{screen_dims[0]}+{screen_dims[1]}")
 
     # Bring the window to the foreground
     root.lift()
@@ -32,21 +45,21 @@ def start_screenshot_mode():
 
     def start_capture(event):
         nonlocal start_x, start_y, rect
-        start_x = event.x
-        start_y = event.y
+        start_x = root.winfo_x() + event.x
+        start_y = root.winfo_y() + event.y
         if rect:
             canvas.delete(rect)
-        rect = canvas.create_rectangle(start_x, start_y, start_x, start_y, outline='red', width=2)
+        rect = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline='red', width=2)
 
     def drag(event):
         nonlocal rect
-        canvas.coords(rect, start_x, start_y, event.x, event.y)
+        canvas.coords(rect, start_x - root.winfo_x(), start_y - root.winfo_y(), event.x, event.y)
 
     def capture_screenshot(event):
-        x1 = min(start_x, event.x)
-        y1 = min(start_y, event.y)
-        x2 = max(start_x, event.x)
-        y2 = max(start_y, event.y)
+        x1 = min(start_x, root.winfo_x() + event.x)
+        y1 = min(start_y, root.winfo_y() + event.y)
+        x2 = max(start_x, root.winfo_x() + event.x)
+        y2 = max(start_y, root.winfo_y() + event.y)
         root.withdraw()
         
         # Ensure the rectangle has a minimum size
@@ -55,8 +68,11 @@ def start_screenshot_mode():
             root.quit()
             return
 
-        # Capture the screenshot
-        screenshot = ImageGrab.grab(bbox=(x1, y1, x2, y2))
+        # Capture the screenshot using mss
+        with mss.mss() as sct:
+            monitor = {"top": y1, "left": x1, "width": x2 - x1, "height": y2 - y1}
+            screenshot = sct.grab(monitor)
+            screenshot = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
         
         # Create screenshots directory if it doesn't exist
         screenshot_dir = os.path.join(os.getcwd(), "screenshots")
