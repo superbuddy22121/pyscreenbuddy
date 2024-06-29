@@ -1,0 +1,33 @@
+Multi-Monitor Screenshot Tool
+Copyright 2024 Jon Leaman
+
+This product includes software developed by Jon Leaman.
+
+This product in its entirety , including this notice, were created with the assistance of GenerativeAI.  Take care. 
+
+This software uses the following third-party libraries, which are available under their respective licenses:
+
+1. keyboard - MIT License
+   Copyright (c) 2016 Boppreh
+   https://github.com/boppreh/keyboard
+
+2. Pillow (PIL) - Open Source PIL Software License
+   Copyright © 1997-2011 by Secret Labs AB
+   Copyright © 1995-2011 by Fredrik Lundh
+   https://github.com/python-pillow/Pillow
+
+3. pywin32 - Python Software Foundation License
+   Copyright (c) 1994-2008, Mark Hammond 
+   https://github.com/mhammond/pywin32
+
+4. screeninfo - MIT License
+   Copyright (c) 2013-2019 Marcin Kurczewski
+   https://github.com/rr-/screeninfo
+
+5. mss - MIT License
+   Copyright (c) 2016-2021 Mickaël Schoentgen
+   https://github.com/BoboTiG/python-mss
+
+For full license texts, please refer to the respective project repositories or the 'licenses' folder in this project.
+
+
