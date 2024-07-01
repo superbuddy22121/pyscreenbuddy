@@ -45,21 +45,21 @@ def start_screenshot_mode():
 
     def start_capture(event):
         nonlocal start_x, start_y, rect
-        start_x = root.winfo_x() + event.x
-        start_y = root.winfo_y() + event.y
+        start_x = event.x_root
+        start_y = event.y_root
         if rect:
             canvas.delete(rect)
         rect = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline='red', width=2)
 
     def drag(event):
         nonlocal rect
-        canvas.coords(rect, start_x - root.winfo_x(), start_y - root.winfo_y(), event.x, event.y)
+        canvas.coords(rect, start_x - root.winfo_rootx(), start_y - root.winfo_rooty(), event.x, event.y)
 
     def capture_screenshot(event):
-        x1 = min(start_x, root.winfo_x() + event.x)
-        y1 = min(start_y, root.winfo_y() + event.y)
-        x2 = max(start_x, root.winfo_x() + event.x)
-        y2 = max(start_y, root.winfo_y() + event.y)
+        x1 = min(start_x, event.x_root)
+        y1 = min(start_y, event.y_root)
+        x2 = max(start_x, event.x_root)
+        y2 = max(start_y, event.y_root)
         root.withdraw()
         
         # Ensure the rectangle has a minimum size
